@@ -1,33 +1,60 @@
 "use client";
 
 import { useState, useCallback, useRef } from "react";
-import { ImageIcon, RotateCcw } from "lucide-react";
+import { ImageIcon, RotateCcw, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { UploadZone } from "@/components/upload-zone";
 import { AsciiPreview } from "@/components/ascii-preview";
 import { ControlsPanel } from "@/components/controls-panel";
 import { ExportDialog } from "@/components/export-dialog";
-import { useImageUpload } from "@/hooks/use-image-upload";
+import { PlaybackControls } from "@/components/playback-controls";
+import { useMediaUpload } from "@/hooks/use-media-upload";
 import { useAsciiConverter } from "@/hooks/use-ascii-converter";
+import { useAnimationConverter } from "@/hooks/use-animation-converter";
 import { AsciiSettings } from "@/types";
 import { DEFAULT_SETTINGS } from "@/lib/constants";
 
 export default function Home() {
   const {
     image,
+    frames,
+    fps,
+    mediaType,
     fileName,
+    extractionProgress,
     inputRef,
     handleFileChange,
     handleDrop,
     handleDragOver,
     openFilePicker,
     reset,
-  } = useImageUpload();
+  } = useMediaUpload();
 
   const [settings, setSettings] = useState<AsciiSettings>(DEFAULT_SETTINGS);
   const previewRef = useRef<HTMLPreElement>(null);
 
-  const { output, isProcessing } = useAsciiConverter(image, settings);
+  const { output: staticOutput, isProcessing: isStaticProcessing } =
+    useAsciiConverter(mediaType === "image" ? image : null, settings);
+
+  const {
+    currentOutput: animOutput,
+    currentFrame,
+    totalFrames,
+    isPlaying,
+    isConverting: isAnimConverting,
+    playbackSpeed,
+    setPlaybackSpeed,
+    togglePlay,
+    seekTo,
+  } = useAnimationConverter(
+    mediaType === "animation" ? frames : null,
+    fps,
+    settings
+  );
+
+  const output = mediaType === "animation" ? animOutput : staticOutput;
+  const isProcessing =
+    mediaType === "animation" ? isAnimConverting : isStaticProcessing;
 
   const handleSettingsChange = useCallback(
     (partial: Partial<AsciiSettings>) => {
@@ -41,8 +68,10 @@ export default function Home() {
     setSettings(DEFAULT_SETTINGS);
   }, [reset]);
 
+  const hasMedia = image || frames;
+
   // Idle state — show upload zone
-  if (!image) {
+  if (!hasMedia && extractionProgress === null) {
     return (
       <div className="flex flex-col flex-1 items-center justify-center min-h-screen">
         <div className="text-center mb-10">
@@ -50,7 +79,7 @@ export default function Home() {
             ASCII Art Converter
           </h1>
           <p className="text-muted-foreground text-sm">
-            Transform any image into stunning ASCII art
+            Transform any image, GIF, or video into ASCII art
           </p>
         </div>
         <UploadZone
@@ -60,6 +89,24 @@ export default function Home() {
           onDragOver={handleDragOver}
           onClick={openFilePicker}
         />
+      </div>
+    );
+  }
+
+  // Extracting frames state
+  if (extractionProgress !== null) {
+    return (
+      <div className="flex flex-col flex-1 items-center justify-center min-h-screen gap-4">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        <p className="text-sm text-muted-foreground">
+          Extracting frames... {extractionProgress}%
+        </p>
+        <div className="w-64 h-2 bg-muted rounded-full overflow-hidden">
+          <div
+            className="h-full bg-primary transition-all duration-200 rounded-full"
+            style={{ width: `${extractionProgress}%` }}
+          />
+        </div>
       </div>
     );
   }
@@ -78,6 +125,11 @@ export default function Home() {
               {fileName}
             </span>
           )}
+          {mediaType === "animation" && (
+            <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full">
+              Animation
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-2">
           {isProcessing && (
@@ -85,15 +137,27 @@ export default function Home() {
               Processing...
             </span>
           )}
-          <Button variant="ghost" size="sm" onClick={openFilePicker} className="gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={openFilePicker}
+            className="gap-2"
+          >
             <ImageIcon className="w-4 h-4" />
             Replace
           </Button>
-          <Button variant="ghost" size="sm" onClick={handleReset} className="gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleReset}
+            className="gap-2"
+          >
             <RotateCcw className="w-4 h-4" />
             Reset
           </Button>
-          <ExportDialog bgColor={settings.bgColor} />
+          {mediaType === "image" && (
+            <ExportDialog bgColor={settings.bgColor} />
+          )}
         </div>
       </header>
 
@@ -115,11 +179,24 @@ export default function Home() {
         )}
       </div>
 
+      {/* Playback controls for animations */}
+      {mediaType === "animation" && totalFrames > 0 && (
+        <PlaybackControls
+          currentFrame={currentFrame}
+          totalFrames={totalFrames}
+          isPlaying={isPlaying}
+          playbackSpeed={playbackSpeed}
+          onTogglePlay={togglePlay}
+          onSeek={seekTo}
+          onSpeedChange={setPlaybackSpeed}
+        />
+      )}
+
       {/* Hidden file input for replace */}
       <input
         ref={inputRef}
         type="file"
-        accept="image/*"
+        accept="image/*,video/*"
         className="hidden"
         onChange={handleFileChange}
       />

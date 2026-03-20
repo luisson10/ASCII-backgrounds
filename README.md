@@ -1,4 +1,4 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+This is a [Next.js](https://nextjs.org) project for converting images into ASCII art.
 
 ## Getting Started
 
@@ -29,8 +29,22 @@ To learn more about Next.js, take a look at the following resources:
 
 You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
 
-## Deploy on Vercel
+## Deploy on Railway
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+This app is ready for Railway's native Node/npm deployment flow.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Railway can use the existing scripts in `package.json`:
+
+```bash
+npm install
+npm run build
+npm run start
+```
+
+Notes:
+
+- `next start` already uses Railway's `PORT` environment variable.
+- In Next.js 16, `next start` binds to `0.0.0.0` by default.
+- `package.json` now declares `node >=20.9.0`, matching Next.js 16 requirements.
+
+If you deploy from GitHub on Railway, you should not need a Dockerfile or major platform-specific code changes.

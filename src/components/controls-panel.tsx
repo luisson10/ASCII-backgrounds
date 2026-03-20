@@ -1,7 +1,6 @@
 "use client";
 
 import { AsciiSettings, CharsetKey, ColorMode } from "@/types";
-import { Slider } from "@/components/ui/slider";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import {
@@ -13,14 +12,11 @@ import {
 } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { ColorPicker } from "./color-picker";
+import { SliderWithInput } from "./slider-with-input";
 
 interface ControlsPanelProps {
   settings: AsciiSettings;
   onChange: (partial: Partial<AsciiSettings>) => void;
-}
-
-function sliderVal(v: number | readonly number[]): number {
-  return Array.isArray(v) ? v[0] : (v as number);
 }
 
 export function ControlsPanel({ settings, onChange }: ControlsPanelProps) {
@@ -34,22 +30,14 @@ export function ControlsPanel({ settings, onChange }: ControlsPanelProps) {
 
       <Separator />
 
-      {/* Resolution */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <Label className="text-sm">Resolution</Label>
-          <span className="text-xs text-muted-foreground font-mono">
-            {settings.columns} cols
-          </span>
-        </div>
-        <Slider
-          min={40}
-          max={300}
-          step={1}
-          value={[settings.columns]}
-          onValueChange={(v) => onChange({ columns: sliderVal(v) })}
-        />
-      </div>
+      <SliderWithInput
+        label="Resolution"
+        value={settings.columns}
+        min={40}
+        max={300}
+        suffix="cols"
+        onChange={(columns) => onChange({ columns })}
+      />
 
       <Separator />
 
@@ -120,58 +108,32 @@ export function ControlsPanel({ settings, onChange }: ControlsPanelProps) {
 
       <Separator />
 
-      {/* Font Size */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <Label className="text-sm">Font Size</Label>
-          <span className="text-xs text-muted-foreground font-mono">
-            {settings.fontSize}px
-          </span>
-        </div>
-        <Slider
-          min={4}
-          max={20}
-          step={1}
-          value={[settings.fontSize]}
-          onValueChange={(v) => onChange({ fontSize: sliderVal(v) })}
-        />
-      </div>
+      <SliderWithInput
+        label="Font Size"
+        value={settings.fontSize}
+        min={4}
+        max={20}
+        suffix="px"
+        onChange={(fontSize) => onChange({ fontSize })}
+      />
 
       <Separator />
 
-      {/* Brightness */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <Label className="text-sm">Brightness</Label>
-          <span className="text-xs text-muted-foreground font-mono">
-            {settings.brightness}
-          </span>
-        </div>
-        <Slider
-          min={-100}
-          max={100}
-          step={1}
-          value={[settings.brightness]}
-          onValueChange={(v) => onChange({ brightness: sliderVal(v) })}
-        />
-      </div>
+      <SliderWithInput
+        label="Brightness"
+        value={settings.brightness}
+        min={-100}
+        max={100}
+        onChange={(brightness) => onChange({ brightness })}
+      />
 
-      {/* Contrast */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between">
-          <Label className="text-sm">Contrast</Label>
-          <span className="text-xs text-muted-foreground font-mono">
-            {settings.contrast}
-          </span>
-        </div>
-        <Slider
-          min={-100}
-          max={100}
-          step={1}
-          value={[settings.contrast]}
-          onValueChange={(v) => onChange({ contrast: sliderVal(v) })}
-        />
-      </div>
+      <SliderWithInput
+        label="Contrast"
+        value={settings.contrast}
+        min={-100}
+        max={100}
+        onChange={(contrast) => onChange({ contrast })}
+      />
 
       <Separator />
 

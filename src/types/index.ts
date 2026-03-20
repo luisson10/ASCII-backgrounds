@@ -1,6 +1,7 @@
 export type ColorMode = "monochrome" | "colored";
 export type CharsetKey = "simple" | "detailed" | "block" | "custom";
 export type ExportQuality = "low" | "medium" | "high" | "extraHigh";
+export type MediaType = "image" | "animation";
 
 export interface AsciiSettings {
   columns: number;
@@ -26,4 +27,11 @@ export interface AsciiOutput {
   grid: AsciiChar[][];
   rows: number;
   columns: number;
+}
+
+export interface ExtractedFrames {
+  frames: HTMLCanvasElement[];
+  fps: number;
+  width: number;
+  height: number;
 }

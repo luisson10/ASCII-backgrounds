@@ -1,6 +1,17 @@
 import { AsciiChar, AsciiOutput, AsciiSettings } from "@/types";
 import { CHARSETS } from "./constants";
 
+export function convertCanvasToAscii(
+  sourceCanvas: HTMLCanvasElement,
+  settings: AsciiSettings
+): AsciiOutput {
+  const ctx = sourceCanvas.getContext("2d")!;
+  const w = sourceCanvas.width;
+  const h = sourceCanvas.height;
+  const imageData = ctx.getImageData(0, 0, w, h);
+  return processPixels(imageData.data, w, h, settings);
+}
+
 export function convertToAscii(
   image: HTMLImageElement,
   settings: AsciiSettings
@@ -15,7 +26,15 @@ export function convertToAscii(
   ctx.drawImage(image, 0, 0, w, h);
 
   const imageData = ctx.getImageData(0, 0, w, h);
-  const pixels = imageData.data;
+  return processPixels(imageData.data, w, h, settings);
+}
+
+function processPixels(
+  pixels: Uint8ClampedArray,
+  w: number,
+  h: number,
+  settings: AsciiSettings
+): AsciiOutput {
 
   // Apply brightness and contrast
   if (settings.brightness !== 0 || settings.contrast !== 0) {

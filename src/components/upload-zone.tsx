@@ -27,19 +27,22 @@ export function UploadZone({
       <div className="flex flex-col items-center justify-center w-full h-64 rounded-2xl border-2 border-dashed border-border bg-card/50 hover:bg-card hover:border-primary/50 transition-all duration-200">
         <Upload className="w-10 h-10 text-muted-foreground mb-4" />
         <p className="text-base font-medium text-foreground mb-1">
-          Drop an image here
+          Drop a file here
         </p>
         <p className="text-sm text-muted-foreground">
           or click to browse
         </p>
         <p className="text-xs text-muted-foreground mt-2">
-          PNG, JPG, WEBP, GIF
+          Images, GIFs, or Videos
+        </p>
+        <p className="text-xs text-muted-foreground">
+          PNG, JPG, WEBP, GIF, MP4, WEBM
         </p>
       </div>
       <input
         ref={inputRef}
         type="file"
-        accept="image/*"
+        accept="image/*,video/*"
         className="hidden"
         onChange={onFileChange}
       />
