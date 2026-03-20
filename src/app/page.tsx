@@ -1,65 +1,128 @@
-import Image from "next/image";
+"use client";
+
+import { useState, useCallback, useRef } from "react";
+import { ImageIcon, RotateCcw } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { UploadZone } from "@/components/upload-zone";
+import { AsciiPreview } from "@/components/ascii-preview";
+import { ControlsPanel } from "@/components/controls-panel";
+import { ExportDialog } from "@/components/export-dialog";
+import { useImageUpload } from "@/hooks/use-image-upload";
+import { useAsciiConverter } from "@/hooks/use-ascii-converter";
+import { AsciiSettings } from "@/types";
+import { DEFAULT_SETTINGS } from "@/lib/constants";
 
 export default function Home() {
-  return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
+  const {
+    image,
+    fileName,
+    inputRef,
+    handleFileChange,
+    handleDrop,
+    handleDragOver,
+    openFilePicker,
+    reset,
+  } = useImageUpload();
+
+  const [settings, setSettings] = useState<AsciiSettings>(DEFAULT_SETTINGS);
+  const previewRef = useRef<HTMLPreElement>(null);
+
+  const { output, isProcessing } = useAsciiConverter(image, settings);
+
+  const handleSettingsChange = useCallback(
+    (partial: Partial<AsciiSettings>) => {
+      setSettings((prev) => ({ ...prev, ...partial }));
+    },
+    []
+  );
+
+  const handleReset = useCallback(() => {
+    reset();
+    setSettings(DEFAULT_SETTINGS);
+  }, [reset]);
+
+  // Idle state — show upload zone
+  if (!image) {
+    return (
+      <div className="flex flex-col flex-1 items-center justify-center min-h-screen">
+        <div className="text-center mb-10">
+          <h1 className="text-3xl font-bold tracking-tight mb-2">
+            ASCII Art Converter
           </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
+          <p className="text-muted-foreground text-sm">
+            Transform any image into stunning ASCII art
           </p>
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+        <UploadZone
+          inputRef={inputRef}
+          onFileChange={handleFileChange}
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
+          onClick={openFilePicker}
+        />
+      </div>
+    );
+  }
+
+  // Editing state — show controls + preview
+  return (
+    <div className="flex flex-col h-screen">
+      {/* Top bar */}
+      <header className="flex items-center justify-between px-5 py-3 border-b border-border bg-card shrink-0">
+        <div className="flex items-center gap-3">
+          <h1 className="text-base font-semibold tracking-tight">
+            ASCII Art Converter
+          </h1>
+          {fileName && (
+            <span className="text-xs text-muted-foreground truncate max-w-48">
+              {fileName}
+            </span>
+          )}
         </div>
-      </main>
+        <div className="flex items-center gap-2">
+          {isProcessing && (
+            <span className="text-xs text-muted-foreground animate-pulse">
+              Processing...
+            </span>
+          )}
+          <Button variant="ghost" size="sm" onClick={openFilePicker} className="gap-2">
+            <ImageIcon className="w-4 h-4" />
+            Replace
+          </Button>
+          <Button variant="ghost" size="sm" onClick={handleReset} className="gap-2">
+            <RotateCcw className="w-4 h-4" />
+            Reset
+          </Button>
+          <ExportDialog bgColor={settings.bgColor} />
+        </div>
+      </header>
+
+      {/* Main content */}
+      <div className="flex flex-1 overflow-hidden">
+        <ControlsPanel settings={settings} onChange={handleSettingsChange} />
+        {output ? (
+          <AsciiPreview
+            output={output}
+            settings={settings}
+            previewRef={previewRef}
+          />
+        ) : (
+          <div className="flex-1 flex items-center justify-center">
+            <p className="text-muted-foreground text-sm animate-pulse">
+              Generating ASCII art...
+            </p>
+          </div>
+        )}
+      </div>
+
+      {/* Hidden file input for replace */}
+      <input
+        ref={inputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleFileChange}
+      />
     </div>
   );
 }
