@@ -17,11 +17,23 @@ export const AsciiPreview = React.memo(function AsciiPreview({
   previewRef,
 }: AsciiPreviewProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const [zoom, setZoom] = useState<number | null>(null); // null = auto-fit
+  const [zoomState, setZoomState] = useState<{
+    value: number | null;
+    columns: number;
+    rows: number;
+  }>({
+    value: null,
+    columns: output.columns,
+    rows: output.rows,
+  });
 
   // Compute the scale needed to fit the ascii art in the container
   const fitScale = useComputeFitScale(containerRef, previewRef, output, settings);
 
+  const zoom =
+    zoomState.columns === output.columns && zoomState.rows === output.rows
+      ? zoomState.value
+      : null;
   const activeZoom = zoom ?? fitScale;
 
   const content = useMemo(() => {
@@ -52,20 +64,27 @@ export const AsciiPreview = React.memo(function AsciiPreview({
   }, [output, settings.colorMode, settings.fgColor]);
 
   const handleZoomIn = useCallback(() => {
-    setZoom((prev) => Math.min((prev ?? fitScale) * 1.25, 5));
-  }, [fitScale]);
+    setZoomState({
+      value: Math.min((zoom ?? fitScale) * 1.25, 5),
+      columns: output.columns,
+      rows: output.rows,
+    });
+  }, [fitScale, output.columns, output.rows, zoom]);
 
   const handleZoomOut = useCallback(() => {
-    setZoom((prev) => Math.max((prev ?? fitScale) * 0.8, 0.05));
-  }, [fitScale]);
+    setZoomState({
+      value: Math.max((zoom ?? fitScale) * 0.8, 0.05),
+      columns: output.columns,
+      rows: output.rows,
+    });
+  }, [fitScale, output.columns, output.rows, zoom]);
 
   const handleFitToView = useCallback(() => {
-    setZoom(null);
-  }, []);
-
-  // Reset to auto-fit when output changes significantly (resolution change)
-  useEffect(() => {
-    setZoom(null);
+    setZoomState({
+      value: null,
+      columns: output.columns,
+      rows: output.rows,
+    });
   }, [output.columns, output.rows]);
 
   // Handle scroll wheel zoom
@@ -74,13 +93,15 @@ export const AsciiPreview = React.memo(function AsciiPreview({
       if (e.ctrlKey || e.metaKey) {
         e.preventDefault();
         const delta = e.deltaY > 0 ? 0.9 : 1.1;
-        setZoom((prev) => {
-          const current = prev ?? fitScale;
-          return Math.max(0.05, Math.min(5, current * delta));
+        const current = zoom ?? fitScale;
+        setZoomState({
+          value: Math.max(0.05, Math.min(5, current * delta)),
+          columns: output.columns,
+          rows: output.rows,
         });
       }
     },
-    [fitScale]
+    [fitScale, output.columns, output.rows, zoom]
   );
 
   return (
