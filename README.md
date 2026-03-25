@@ -46,7 +46,7 @@ Notes:
 - `next start` already uses Railway's `PORT` environment variable.
 - In Next.js 16, `next start` binds to `0.0.0.0` by default.
 - `package.json` now declares `node >=20.9.0`, matching Next.js 16 requirements.
-- `railway.json` pins the service to `RAILPACK`, starts Next explicitly on `0.0.0.0:$PORT`, and adds a `/health` healthcheck.
+- `railway.json` pins the service to `RAILPACK`, starts the local Next binary explicitly on `0.0.0.0:$PORT`, and adds a `/health` healthcheck.
 
 If you deploy from GitHub on Railway, you should not need a Dockerfile or major platform-specific code changes.
 
