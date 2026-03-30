@@ -7,6 +7,7 @@ import { UploadZone } from "@/components/upload-zone";
 import { AsciiPreview } from "@/components/ascii-preview";
 import { ControlsPanel } from "@/components/controls-panel";
 import { ExportDialog } from "@/components/export-dialog";
+import { AnimationExportDialog } from "@/components/animation-export-dialog";
 import { PlaybackControls } from "@/components/playback-controls";
 import { useMediaUpload } from "@/hooks/use-media-upload";
 import { useAsciiConverter } from "@/hooks/use-ascii-converter";
@@ -19,6 +20,8 @@ export default function Home() {
     image,
     frames,
     fps,
+    targetFps,
+    setTargetFps,
     mediaType,
     fileName,
     extractionProgress,
@@ -37,6 +40,7 @@ export default function Home() {
     useAsciiConverter(mediaType === "image" ? image : null, settings);
 
   const {
+    asciiFrames,
     currentOutput: animOutput,
     currentFrame,
     totalFrames,
@@ -155,9 +159,15 @@ export default function Home() {
             <RotateCcw className="w-4 h-4" />
             Reset
           </Button>
-          {mediaType === "image" && (
+          {mediaType === "image" ? (
             <ExportDialog bgColor={settings.bgColor} />
-          )}
+          ) : mediaType === "animation" && asciiFrames.length > 0 ? (
+            <AnimationExportDialog
+              asciiFrames={asciiFrames}
+              settings={settings}
+              fps={targetFps}
+            />
+          ) : null}
         </div>
       </header>
 
@@ -186,9 +196,11 @@ export default function Home() {
           totalFrames={totalFrames}
           isPlaying={isPlaying}
           playbackSpeed={playbackSpeed}
+          currentFps={targetFps}
           onTogglePlay={togglePlay}
           onSeek={seekTo}
           onSpeedChange={setPlaybackSpeed}
+          onFpsChange={setTargetFps}
         />
       )}
 

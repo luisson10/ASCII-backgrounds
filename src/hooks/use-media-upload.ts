@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { MediaType } from "@/types";
 import {
   extractVideoFrames,
@@ -39,12 +39,14 @@ export function useMediaUpload() {
   const [image, setImage] = useState<HTMLImageElement | null>(null);
   const [frames, setFrames] = useState<HTMLCanvasElement[] | null>(null);
   const [fps, setFps] = useState(12);
+  const [targetFps, setTargetFps] = useState(12);
   const [mediaType, setMediaType] = useState<MediaType>("image");
   const [fileName, setFileName] = useState("");
   const [extractionProgress, setExtractionProgress] = useState<number | null>(
     null
   );
   const inputRef = useRef<HTMLInputElement>(null);
+  const originalFileRef = useRef<File | null>(null);
 
   const loadStaticImage = useCallback((file: File) => {
     const reader = new FileReader();
@@ -55,19 +57,27 @@ export function useMediaUpload() {
         setFrames(null);
         setMediaType("image");
         setFileName(file.name);
+        originalFileRef.current = null;
       };
       img.src = e.target?.result as string;
     };
     reader.readAsDataURL(file);
   }, []);
 
-  const loadAnimation = useCallback(async (file: File) => {
+  const loadAnimation = useCallback(async (file: File, fpsOverride?: number) => {
     setExtractionProgress(0);
     setFileName(file.name);
+    originalFileRef.current = file;
+
+    const effectiveFps = fpsOverride ?? targetFps;
 
     try {
-      const extractor = isGif(file) ? extractGifFrames : extractVideoFrames;
-      const result = await extractor(file, setExtractionProgress);
+      let result: { frames: HTMLCanvasElement[]; fps: number };
+      if (isGif(file)) {
+        result = await extractGifFrames(file, setExtractionProgress);
+      } else {
+        result = await extractVideoFrames(file, setExtractionProgress, effectiveFps);
+      }
 
       if (result.frames.length <= 1 && isGif(file)) {
         // Single frame GIF — treat as static image
@@ -77,13 +87,14 @@ export function useMediaUpload() {
           setImage(img);
           setFrames(null);
           setMediaType("image");
+          originalFileRef.current = null;
         };
         img.src = canvas.toDataURL();
         return;
       }
 
       setFrames(result.frames);
-      setFps(result.fps);
+      setFps(isGif(file) ? result.fps : effectiveFps);
       setImage(null);
       setMediaType("animation");
     } catch (err) {
@@ -91,7 +102,15 @@ export function useMediaUpload() {
     } finally {
       setExtractionProgress(null);
     }
-  }, []);
+  }, [targetFps]);
+
+  // Re-extract when targetFps changes and we have a video file
+  useEffect(() => {
+    const file = originalFileRef.current;
+    if (!file || !isVideo(file)) return;
+    loadAnimation(file, targetFps);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [targetFps]);
 
   const loadFile = useCallback(
     (file: File) => {
@@ -135,6 +154,8 @@ export function useMediaUpload() {
     setMediaType("image");
     setFileName("");
     setExtractionProgress(null);
+    setTargetFps(12);
+    originalFileRef.current = null;
     if (inputRef.current) inputRef.current.value = "";
   }, []);
 
@@ -142,6 +163,8 @@ export function useMediaUpload() {
     image,
     frames,
     fps,
+    targetFps,
+    setTargetFps,
     mediaType,
     fileName,
     extractionProgress,

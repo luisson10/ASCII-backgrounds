@@ -36,8 +36,11 @@ export const AsciiPreview = React.memo(function AsciiPreview({
       : null;
   const activeZoom = zoom ?? fitScale;
 
+  const isPixelMono =
+    settings.renderMode === "pixel" && settings.colorMode === "monochrome";
+
   const content = useMemo(() => {
-    if (settings.colorMode === "monochrome") {
+    if (settings.colorMode === "monochrome" && !isPixelMono) {
       return (
         <span style={{ color: settings.fgColor }}>
           {output.grid.map((row, i) => (
@@ -50,7 +53,7 @@ export const AsciiPreview = React.memo(function AsciiPreview({
       );
     }
 
-    // Colored mode
+    // Colored mode or pixel mono (needs per-char color)
     return output.grid.map((row, i) => (
       <React.Fragment key={i}>
         {row.map((c, j) => (
@@ -61,7 +64,7 @@ export const AsciiPreview = React.memo(function AsciiPreview({
         {"\n"}
       </React.Fragment>
     ));
-  }, [output, settings.colorMode, settings.fgColor]);
+  }, [output, settings.colorMode, settings.fgColor, isPixelMono]);
 
   const handleZoomIn = useCallback(() => {
     setZoomState({
@@ -140,7 +143,7 @@ export const AsciiPreview = React.memo(function AsciiPreview({
             id="ascii-output"
             style={{
               fontSize: `${settings.fontSize}px`,
-              lineHeight: 1,
+              lineHeight: settings.lineHeight,
               letterSpacing: "0px",
               backgroundColor: settings.bgColor,
               fontFamily: "var(--font-geist-mono), monospace",
@@ -185,7 +188,7 @@ function useComputeFitScale(
     // Use rAF to wait for render
     const raf = requestAnimationFrame(measure);
     return () => cancelAnimationFrame(raf);
-  }, [containerRef, preRef, output, settings.fontSize]);
+  }, [containerRef, preRef, output, settings.fontSize, settings.lineHeight]);
 
   return fitScale;
 }

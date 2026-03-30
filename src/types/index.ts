@@ -2,6 +2,7 @@ export type ColorMode = "monochrome" | "colored";
 export type CharsetKey = "simple" | "detailed" | "block" | "custom";
 export type ExportQuality = "low" | "medium" | "high" | "extraHigh";
 export type MediaType = "image" | "animation";
+export type RenderMode = "ascii" | "pixel";
 
 export interface AsciiSettings {
   columns: number;
@@ -14,6 +15,12 @@ export interface AsciiSettings {
   brightness: number;
   contrast: number;
   invert: boolean;
+  charAspectRatio: number;
+  gamma: number;
+  saturation: number;
+  edgeEnhance: boolean;
+  lineHeight: number;
+  renderMode: RenderMode;
 }
 
 export interface AsciiChar {
@@ -27,6 +34,14 @@ export interface AsciiOutput {
   grid: AsciiChar[][];
   rows: number;
   columns: number;
+}
+
+export interface Preset {
+  id: string;
+  name: string;
+  settings: AsciiSettings;
+  builtIn: boolean;
+  createdAt: number;
 }
 
 export interface ExtractedFrames {

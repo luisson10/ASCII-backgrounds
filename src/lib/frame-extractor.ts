@@ -1,5 +1,5 @@
 const MAX_DIMENSION = 800;
-const MAX_FRAMES = 120;
+const MAX_FRAMES = 300;
 
 function downscaleCanvas(
   source: HTMLCanvasElement | HTMLVideoElement | HTMLImageElement,
@@ -25,7 +25,8 @@ function downscaleCanvas(
 
 export async function extractVideoFrames(
   file: File,
-  onProgress?: (pct: number) => void
+  onProgress?: (pct: number) => void,
+  targetFps: number = 12
 ): Promise<{ frames: HTMLCanvasElement[]; fps: number }> {
   const url = URL.createObjectURL(file);
   const video = document.createElement("video");
@@ -40,7 +41,6 @@ export async function extractVideoFrames(
   });
 
   const duration = video.duration;
-  const targetFps = 12;
   const totalFrames = Math.min(
     Math.floor(duration * targetFps),
     MAX_FRAMES
@@ -66,7 +66,8 @@ export async function extractVideoFrames(
 
 export async function extractGifFrames(
   file: File,
-  onProgress?: (pct: number) => void
+  onProgress?: (pct: number) => void,
+  maxFrames: number = MAX_FRAMES
 ): Promise<{ frames: HTMLCanvasElement[]; fps: number }> {
   // Use the browser to play the GIF and capture frames via an img + canvas approach
   const url = URL.createObjectURL(file);
@@ -98,7 +99,7 @@ export async function extractGifFrames(
 
     await decoder.tracks.ready;
     const track = decoder.tracks.selectedTrack!;
-    const frameCount = Math.min(track.frameCount, MAX_FRAMES);
+    const frameCount = Math.min(track.frameCount, maxFrames);
     const frames: HTMLCanvasElement[] = [];
 
     let totalDuration = 0;

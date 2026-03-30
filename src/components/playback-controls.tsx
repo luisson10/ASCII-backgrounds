@@ -9,9 +9,11 @@ interface PlaybackControlsProps {
   totalFrames: number;
   isPlaying: boolean;
   playbackSpeed: number;
+  currentFps: number;
   onTogglePlay: () => void;
   onSeek: (frame: number) => void;
   onSpeedChange: (speed: number) => void;
+  onFpsChange: (fps: number) => void;
 }
 
 function sliderVal(v: number | readonly number[]): number {
@@ -23,9 +25,11 @@ export function PlaybackControls({
   totalFrames,
   isPlaying,
   playbackSpeed,
+  currentFps,
   onTogglePlay,
   onSeek,
   onSpeedChange,
+  onFpsChange,
 }: PlaybackControlsProps) {
   return (
     <div className="flex items-center gap-3 px-5 py-2.5 border-t border-border bg-card shrink-0">
@@ -86,6 +90,22 @@ export function PlaybackControls({
             onClick={() => onSpeedChange(speed)}
           >
             {speed}x
+          </Button>
+        ))}
+      </div>
+
+      {/* FPS control */}
+      <div className="flex items-center gap-1.5">
+        <span className="text-xs text-muted-foreground">FPS</span>
+        {[8, 12, 24, 30].map((fpsOption) => (
+          <Button
+            key={fpsOption}
+            variant={currentFps === fpsOption ? "default" : "ghost"}
+            size="sm"
+            className="h-6 px-2 text-xs"
+            onClick={() => onFpsChange(fpsOption)}
+          >
+            {fpsOption}
           </Button>
         ))}
       </div>

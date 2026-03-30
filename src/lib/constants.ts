@@ -1,4 +1,4 @@
-import { AsciiSettings, ExportQuality } from "@/types";
+import { AsciiSettings, ExportQuality, RenderMode } from "@/types";
 
 export const CHARSETS: Record<string, string> = {
   simple: " .:-=+*#%@",
@@ -18,6 +18,12 @@ export const DEFAULT_SETTINGS: AsciiSettings = {
   brightness: 0,
   contrast: 0,
   invert: false,
+  charAspectRatio: 1.75,
+  gamma: 1.0,
+  saturation: 1.0,
+  edgeEnhance: false,
+  lineHeight: 1.0,
+  renderMode: "ascii" as RenderMode,
 };
 
 export const EXPORT_PRESETS: Record<
