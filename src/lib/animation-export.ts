@@ -1,48 +1,5 @@
 import { AsciiOutput, AsciiSettings } from "@/types";
-
-/**
- * Pre-renders a single ASCII frame to an offscreen canvas.
- * This is the expensive operation (fillText per character).
- */
-function renderFrameToCanvas(
-  frame: AsciiOutput,
-  settings: AsciiSettings,
-  charWidth: number,
-  rowHeight: number,
-  canvasWidth: number,
-  canvasHeight: number,
-  scale: number
-): HTMLCanvasElement {
-  const canvas = document.createElement("canvas");
-  canvas.width = canvasWidth;
-  canvas.height = canvasHeight;
-  const ctx = canvas.getContext("2d")!;
-
-  const fontSize = settings.fontSize * scale;
-  const padding = 24 * scale;
-
-  // Background
-  ctx.fillStyle = settings.bgColor;
-  ctx.fillRect(0, 0, canvasWidth, canvasHeight);
-
-  // Text rendering
-  ctx.font = `${fontSize}px "Geist Mono", monospace`;
-  ctx.textBaseline = "top";
-
-  for (let row = 0; row < frame.grid.length; row++) {
-    for (let col = 0; col < frame.grid[row].length; col++) {
-      const c = frame.grid[row][col];
-      if (settings.colorMode === "colored" || settings.renderMode === "pixel") {
-        ctx.fillStyle = `rgb(${c.r},${c.g},${c.b})`;
-      } else {
-        ctx.fillStyle = settings.fgColor;
-      }
-      ctx.fillText(c.char, padding + col * charWidth, padding + row * rowHeight);
-    }
-  }
-
-  return canvas;
-}
+import { computeDimensions, renderToCanvas } from "./ascii-render";
 
 /**
  * Yields control back to the browser to prevent UI freezes.
@@ -68,36 +25,20 @@ export async function exportAnimationAsVideo(
   }
 
   const { scale, lossless } = options;
-  const firstFrame = asciiFrames[0];
-  const fontSize = settings.fontSize * scale;
 
-  // Measure character dimensions
-  const measureCanvas = document.createElement("canvas");
-  const measureCtx = measureCanvas.getContext("2d")!;
-  measureCtx.font = `${fontSize}px "Geist Mono", monospace`;
-  const charWidth = measureCtx.measureText("M").width;
-  const rowHeight = fontSize * (settings.lineHeight || 1.0);
+  // Wait for fonts so char width measurements are accurate
+  if (document.fonts && document.fonts.ready) {
+    await document.fonts.ready;
+  }
 
-  // Canvas dimensions with padding
-  const padding = 24 * scale;
-  const canvasWidth = Math.ceil(charWidth * firstFrame.columns + padding * 2);
-  const canvasHeight = Math.ceil(rowHeight * firstFrame.rows + padding * 2);
+  // Compute dimensions once from the first frame using the shared module
+  const dims = computeDimensions(asciiFrames[0], settings, scale);
 
   // Phase 1: Pre-render all frames (expensive, but we yield between frames)
   const preRendered: HTMLCanvasElement[] = [];
 
   for (let i = 0; i < asciiFrames.length; i++) {
-    preRendered.push(
-      renderFrameToCanvas(
-        asciiFrames[i],
-        settings,
-        charWidth,
-        rowHeight,
-        canvasWidth,
-        canvasHeight,
-        scale
-      )
-    );
+    preRendered.push(renderToCanvas(asciiFrames[i], settings, dims));
 
     // Yield every 4 frames to keep UI responsive
     if (i % 4 === 0) {
@@ -110,8 +51,8 @@ export async function exportAnimationAsVideo(
 
   // Phase 2: Play back pre-rendered frames into MediaRecorder
   const recordCanvas = document.createElement("canvas");
-  recordCanvas.width = canvasWidth;
-  recordCanvas.height = canvasHeight;
+  recordCanvas.width = dims.canvasWidth;
+  recordCanvas.height = dims.canvasHeight;
   const recordCtx = recordCanvas.getContext("2d")!;
 
   // Pick best codec — prefer VP9 lossless for sharp text content

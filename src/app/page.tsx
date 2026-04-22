@@ -159,8 +159,8 @@ export default function Home() {
             <RotateCcw className="w-4 h-4" />
             Reset
           </Button>
-          {mediaType === "image" ? (
-            <ExportDialog bgColor={settings.bgColor} />
+          {mediaType === "image" && staticOutput ? (
+            <ExportDialog output={staticOutput} settings={settings} />
           ) : mediaType === "animation" && asciiFrames.length > 0 ? (
             <AnimationExportDialog
               asciiFrames={asciiFrames}

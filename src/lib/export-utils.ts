@@ -1,21 +1,20 @@
-import html2canvas from "html2canvas-pro";
-import { ExportQuality } from "@/types";
+import { AsciiOutput, AsciiSettings, ExportQuality } from "@/types";
 import { EXPORT_PRESETS } from "./constants";
+import { computeDimensions, renderToCanvas, renderToSvg } from "./ascii-render";
 
 export async function exportAsPng(
-  quality: ExportQuality,
-  bgColor: string
+  output: AsciiOutput,
+  settings: AsciiSettings,
+  quality: ExportQuality
 ): Promise<void> {
-  const element = document.getElementById("ascii-output");
-  if (!element) throw new Error("ASCII output element not found");
+  // Wait for fonts to be loaded so char width measurements are accurate
+  if (document.fonts && document.fonts.ready) {
+    await document.fonts.ready;
+  }
 
-  const preset = EXPORT_PRESETS[quality];
-
-  const canvas = await html2canvas(element, {
-    backgroundColor: bgColor,
-    scale: preset.scale,
-    useCORS: true,
-  });
+  const scale = EXPORT_PRESETS[quality].scale;
+  const dims = computeDimensions(output, settings, scale);
+  const canvas = renderToCanvas(output, settings, dims);
 
   const blob = await new Promise<Blob>((resolve, reject) => {
     canvas.toBlob(
@@ -24,10 +23,28 @@ export async function exportAsPng(
     );
   });
 
+  downloadBlob(blob, `ascii-art-${quality}.png`);
+}
+
+export async function exportAsSvg(
+  output: AsciiOutput,
+  settings: AsciiSettings
+): Promise<void> {
+  if (document.fonts && document.fonts.ready) {
+    await document.fonts.ready;
+  }
+
+  const dims = computeDimensions(output, settings, 1);
+  const svg = renderToSvg(output, settings, dims);
+  const blob = new Blob([svg], { type: "image/svg+xml" });
+  downloadBlob(blob, `ascii-art.svg`);
+}
+
+function downloadBlob(blob: Blob, filename: string): void {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `ascii-art-${quality}.png`;
+  a.download = filename;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
